@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="andoird-junit-report" default="jar">
+    <!-- Should define the location of android.jar to build against. -->
+    <property file="local.properties"/>
+
+    <property name="source.dir" value="src"/>
+
+    <property name="out.dir" value="build"/>
+    <property name="classes.dir" value="${out.dir}/classes"/>
+    
+    <target name="clean">
+        <delete dir="${out.dir}"/>
+    </target>
+    
+    <target name="-init">
+    	<mkdir dir="${out.dir}"/>
+    	<mkdir dir="${classes.dir}"/>
+    </target>
+    
+    <target name="compile" depends="-init">
+        <javac target="1.5" debug="true" destdir="${classes.dir}" classpath="${android.jar}">
+            <src path="${source.dir}"/>
+        </javac>
+    </target>
+    
+    <target name="jar" depends="compile">
+        <jar destfile="${out.dir}/android-junit-report.jar" basedir="${classes.dir}"/>
+    </target>
+</project>
