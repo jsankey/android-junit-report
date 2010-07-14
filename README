@@ -1,0 +1,173 @@
+Android JUnit Report Test Runner
+================================
+
+Introduction
+------------
+
+The Android JUnit report test runner is a custom instrumentation test
+runner for Android that creates XML test reports.  These reports are
+in a similar format to those created by the Ant JUnit task's XML
+formatter, allowing them to be integrated with tools that support that
+format (e.g. continuous integration servers).
+
+How It Works
+------------
+
+This test runner may be used as a drop-in replacement for the standard
+InstrumentationTestRunner provided in the Android SDK.  It is in fact
+an extension of that runner, supporting the same functionality with
+the addition of XML report generation.
+
+To be consistent with existing SDK support for generating coverage
+reports, this runner outputs its XML report in the file storage area
+for the application under test.  By default, the report file is
+produced at:
+
+/data/data/<tested application package>/files/junit-report.xml
+
+The file may be retrieved from the device using adb pull (see below
+for more details).
+
+Using the Runner
+----------------
+
+USING WITH ANT BUILDS
+
+To use this runner with an Ant build (based on the Android SDK support
+for Ant):
+
+  * Add android-junit-report-<version>.jar to your test project's
+    libraries by dropping the jar into a libs/ subdirectory.
+
+  * Update your test project's manifest <instrumentation> tag.  Change
+    the android:name attribute's value to:
+
+    com.zutubi.android.junitreport.JUnitReportTestRunner
+
+  * Edit your build.xml file and set the test.runner property to:
+
+    com.zutubi.android.junitreport.JUnitReportTestRunner
+
+    This must be set *before* running the Android <setup/> task.
+
+These steps will cause your tests to be executed with the custom
+runner, which will produce the junit-report.xml file in the storage
+area for the project under test.  To retrieve the file from the
+device, you can use Ant to run an adb pull, for example:
+
+    <target name="fetch-test-report">
+        <echo>Downloading XML test report...</echo>
+	<mkdir dir="${reports.dir}"/>
+        <exec executable="${adb}" failonerror="true">
+	    <arg line="${adb.device.arg}"/>
+            <arg value="pull" />
+            <arg value="/data/data/${tested.manifest.package}/files/junit-report.xml" />
+            <arg value="${reports.dir}/junit-report.xml" />
+        </exec>
+    </target>
+
+USING WITH ECLIPSE
+
+When running within Eclipse, there is not much call for XML test
+reports.  However, assuming you have edited you test project's
+manifest to specify this custom runner (as described above), you may
+also need to tell Eclipse to use this runner to avoid problems.  You
+can do this by:
+
+  * Adding android-junit-report-<version>.jar to the build path of
+    your test project in Eclipse.
+  * Ensuring all existing run configurations for unit tests specify
+    an Instrumentation runner of:
+
+    com.zutubi.android.junitreport.JUnitReportTestRunner
+
+If you see an error about not being able to find a target package for
+android.test.InstrumentationTestRunner, it is likely you have an
+existing run configuration that is set to use the default runner.  You
+can recreate any such configurations and the issue will disappear.
+
+Report Format
+-------------
+
+As stated above, the XML report format is based on the Ant JUnit
+task's XML formatter.  A few caveats apply:
+
+  * Multiple suites are all placed in a single file under a root
+    <testsuites> element.
+  * Redundant information about the number of nested cases within a
+    suite is omitted.
+  * Durations are omitted from both suites and cases.
+  * Neither standard output nor system properties are included.
+
+The differences mainly revolve around making this reporting as
+lightweight as possible. The report is streamed as the tests run,
+making it impossible to, e.g. include the case count in a
+<testsuite> element. It is possible that durations may be added to
+cases in the future, as this requires minimal buffering.
+
+The format is intended to be "compatible enough" for integration with
+existing tools.  In my particular case I use the reports with my own
+Pulse Continuous Integration Server, so compatibility with it was my
+first target.  If you find an incompatibility with another tool, let
+me know (see below) and I will see what can be done.
+
+Customising Via Arguments
+-------------------------
+
+The runner supports two arguments:
+
+  * reportFilePath: the path, relative to the root of the tested
+    application's file storage area, of the report file to generate.
+    Defaults to junit-report.xml.
+  * filterTraces: if true, stack traces in the report will be filtered
+    to remove common noise (e.g. framework methods).  Defaults to
+    true.
+
+To specify arguments, use the -e flag to adb shell am instrument, for
+example:
+
+adb shell am instrument -w -e reportFilePath my-report.xml \
+  com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
+
+Building From Source
+--------------------
+
+If you would like to modify the runner, or build it yourself for any
+other reason, you will need:
+
+  * A JDK, version 1.5 or later.
+  * The Android SDK (or at least a stub android.jar as provided in the
+    SDK).
+  * Apache Ant version 1.7 or later.
+
+To run a build:
+
+  * Create a file local.properties in the directory containing this
+    README.  In this file, define the location of an android.jar to
+    build against, for example:
+
+    android.jar=/usr/local/java/android/platforms/android-8/android.jar
+
+    where /usr/local/java/android is the root of an Android SDK.
+
+  * Run ant in this same directory:
+
+    $ ant
+
+The jar will be created at build/android-junit-report-dev.jar.
+
+Contact
+-------
+
+If you have any thoughts, questions etc about the runner, you can
+contact me at:
+
+  jason@zutubi.com
+
+All feedback is welcome.
+
+License
+-------
+
+This code is licensed under the Apache License, Version 2.0.  See the
+LICENSE file for details.
