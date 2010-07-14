@@ -31,6 +31,21 @@ for more details).
 Using the Runner
 ----------------
 
+OBTAINING THE JAR
+
+First you will need to obtain a release jar file containing the
+runner.  You can build from source (see below), but it's probably
+easier to just grab the latest jar from:
+
+http://github.com/jsankey/android-junit-report/downloads
+
+You can also grab the latest directly from the build server:
+
+http://pulse.zutubi.com/browse/projects/android-junit-report-release/builds/success/
+
+(Click on "jar" in the "featured artifacts" table on the right of the
+page.)
+
 USING WITH ANT BUILDS
 
 To use this runner with an Ant build (based on the Android SDK support
