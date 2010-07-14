@@ -84,7 +84,7 @@ device, you can use Ant to run an adb pull, for example:
 USING WITH ECLIPSE
 
 When running within Eclipse, there is not much call for XML test
-reports.  However, assuming you have edited you test project's
+reports.  However, assuming you have edited your test project's
 manifest to specify this custom runner (as described above), you may
 also need to tell Eclipse to use this runner to avoid problems.  You
 can do this by:
