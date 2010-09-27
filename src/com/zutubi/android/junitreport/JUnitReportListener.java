@@ -1,24 +1,26 @@
 /*
- * Copyright (C) 2010 Zutubi Pty Ltd 
+ * Copyright (C) 2010 Zutubi Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
+ * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software 
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.zutubi.android.junitreport;
 
-import android.content.Context;
-import android.util.Log;
-import android.util.Xml;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -27,11 +29,9 @@ import junit.framework.TestListener;
 
 import org.xmlpull.v1.XmlSerializer;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import android.content.Context;
+import android.util.Log;
+import android.util.Xml;
 
 /**
  * Custom test listener that outputs test results to a single XML file. The file
@@ -42,14 +42,11 @@ import java.io.Writer;
  * &lt;testsuites&gt; element.</li>
  * <li>Redundant information about the number of nested cases within a suite is
  * omitted.</li>
- * <li>Durations are omitted from both suites and cases.</li>
  * <li>Neither standard output nor system properties are included.</li>
  * </ul>
  * The differences mainly revolve around making this reporting as lightweight as
  * possible. The report is streamed as the tests run, making it impossible to,
- * e.g. include the case count in a &lt;testsuite&gt; element. It is possible
- * that durations may be added to cases in the future, as this requires minimal
- * buffering.
+ * e.g. include the case count in a &lt;testsuite&gt; element.
  */
 public class JUnitReportListener implements TestListener {
     private static final String LOG_TAG = "JUnitReportListener";
@@ -66,6 +63,7 @@ public class JUnitReportListener implements TestListener {
     private static final String ATTRIBUTE_CLASS = "classname";
     private static final String ATTRIBUTE_TYPE = "type";
     private static final String ATTRIBUTE_MESSAGE = "message";
+    private static final String ATTRIBUTE_TIME = "time";
 
     // With thanks to org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.
     // Trimmed some entries, added others for Android.
@@ -88,9 +86,13 @@ public class JUnitReportListener implements TestListener {
     private XmlSerializer mSerializer;
     private String mCurrentSuite;
 
+    // simple time tracking
+    private boolean timeAlreadyWritten = false;
+    private long testStart;
+
     /**
      * Creates a new listener.
-     * 
+     *
      * @param context context of the target application under test
      * @param reportFilePath path of the report file to create (under the
      *            context using {@link Context#openFileOutput(String, int)}).
@@ -111,6 +113,8 @@ public class JUnitReportListener implements TestListener {
             if (test instanceof TestCase) {
                 TestCase testCase = (TestCase) test;
                 checkForNewSuite(testCase);
+                testStart = System.currentTimeMillis();
+                timeAlreadyWritten = false;
                 mSerializer.startTag("", TAG_CASE);
                 mSerializer.attribute("", ATTRIBUTE_CLASS, mCurrentSuite);
                 mSerializer.attribute("", ATTRIBUTE_NAME, testCase.getName());
@@ -155,6 +159,8 @@ public class JUnitReportListener implements TestListener {
 
     private void addProblem(String tag, Throwable error) {
         try {
+            recordTestTime();
+
             mSerializer.startTag("", tag);
             mSerializer.attribute("", ATTRIBUTE_MESSAGE, safeMessage(error));
             mSerializer.attribute("", ATTRIBUTE_TYPE, error.getClass().getName());
@@ -167,10 +173,19 @@ public class JUnitReportListener implements TestListener {
         }
     }
 
+    private void recordTestTime() throws IOException {
+        if(!timeAlreadyWritten) {
+            timeAlreadyWritten = true;
+            mSerializer.attribute("", ATTRIBUTE_TIME,
+                    String.format("%.3f", (System.currentTimeMillis() - testStart) / 1000.));
+        }
+    }
+
     @Override
     public void endTest(Test test) {
         try {
             if (test instanceof TestCase) {
+                recordTestTime();
                 mSerializer.endTag("", TAG_CASE);
             }
         } catch (IOException e) {
