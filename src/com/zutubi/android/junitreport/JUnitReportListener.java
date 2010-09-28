@@ -16,11 +16,9 @@
 
 package com.zutubi.android.junitreport;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import android.content.Context;
+import android.util.Log;
+import android.util.Xml;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -29,9 +27,11 @@ import junit.framework.TestListener;
 
 import org.xmlpull.v1.XmlSerializer;
 
-import android.content.Context;
-import android.util.Log;
-import android.util.Xml;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * Custom test listener that outputs test results to a single XML file. The file
@@ -87,8 +87,8 @@ public class JUnitReportListener implements TestListener {
     private String mCurrentSuite;
 
     // simple time tracking
-    private boolean timeAlreadyWritten = false;
-    private long testStart;
+    private boolean mTimeAlreadyWritten = false;
+    private long mTestStartTime;
 
     /**
      * Creates a new listener.
@@ -113,11 +113,12 @@ public class JUnitReportListener implements TestListener {
             if (test instanceof TestCase) {
                 TestCase testCase = (TestCase) test;
                 checkForNewSuite(testCase);
-                testStart = System.currentTimeMillis();
-                timeAlreadyWritten = false;
                 mSerializer.startTag("", TAG_CASE);
                 mSerializer.attribute("", ATTRIBUTE_CLASS, mCurrentSuite);
                 mSerializer.attribute("", ATTRIBUTE_NAME, testCase.getName());
+
+                mTimeAlreadyWritten = false;
+                mTestStartTime = System.currentTimeMillis();
             }
         } catch (IOException e) {
             Log.e(LOG_TAG, safeMessage(e));
@@ -174,10 +175,10 @@ public class JUnitReportListener implements TestListener {
     }
 
     private void recordTestTime() throws IOException {
-        if(!timeAlreadyWritten) {
-            timeAlreadyWritten = true;
+        if (!mTimeAlreadyWritten) {
+            mTimeAlreadyWritten = true;
             mSerializer.attribute("", ATTRIBUTE_TIME,
-                    String.format("%.3f", (System.currentTimeMillis() - testStart) / 1000.));
+                    String.format("%.3f", (System.currentTimeMillis() - mTestStartTime) / 1000.));
         }
     }
 
