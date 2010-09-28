@@ -35,7 +35,7 @@ import java.io.Writer;
 
 /**
  * Custom test listener that outputs test results to a single XML file. The file
- * uses a similar format the to Ant JUnit task XML formatter, with a couple of
+ * uses a similar format to the Ant JUnit task XML formatter, with a few of
  * caveats:
  * <ul>
  * <li>Multiple suites are all placed in a single file under a root
