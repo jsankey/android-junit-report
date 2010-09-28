@@ -111,14 +111,13 @@ task's XML formatter.  A few caveats apply:
     <testsuites> element.
   * Redundant information about the number of nested cases within a
     suite is omitted.
-  * Durations are omitted from both suites and cases.
+  * Durations are omitted from suites.
   * Neither standard output nor system properties are included.
 
 The differences mainly revolve around making this reporting as
 lightweight as possible. The report is streamed as the tests run,
 making it impossible to, e.g. include the case count in a
-<testsuite> element. It is possible that durations may be added to
-cases in the future, as this requires minimal buffering.
+<testsuite> element.
 
 The format is intended to be "compatible enough" for integration with
 existing tools.  In my particular case I use the reports with my own
