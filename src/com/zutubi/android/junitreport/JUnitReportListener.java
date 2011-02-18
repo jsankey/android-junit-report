@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Zutubi Pty Ltd
+ * Copyright (C) 2010-2011 Zutubi Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ public class JUnitReportListener implements TestListener {
     private Context mContext;
     private String mReportFilePath;
     private boolean mFilterTraces;
+    private boolean mMultiFile;
     private FileOutputStream mOutputStream;
     private XmlSerializer mSerializer;
     private String mCurrentSuite;
@@ -98,18 +99,18 @@ public class JUnitReportListener implements TestListener {
      *            context using {@link Context#openFileOutput(String, int)}).
      * @param filterTraces if true, stack traces will have common noise (e.g.
      *            framework methods) omitted for clarity
+     * @param multiFile if true, use a separate file for each test suite
      */
-    public JUnitReportListener(Context context, String reportFilePath, boolean filterTraces) {
+    public JUnitReportListener(Context context, String reportFilePath, boolean filterTraces, boolean multiFile) {
         this.mContext = context;
         this.mReportFilePath = reportFilePath;
         this.mFilterTraces = filterTraces;
+        this.mMultiFile = multiFile;
     }
 
     @Override
     public void startTest(Test test) {
         try {
-            openIfRequired(test);
-
             if (test instanceof TestCase) {
                 TestCase testCase = (TestCase) test;
                 checkForNewSuite(testCase);
@@ -129,8 +130,14 @@ public class JUnitReportListener implements TestListener {
         String suiteName = testCase.getClass().getName();
         if (mCurrentSuite == null || !mCurrentSuite.equals(suiteName)) {
             if (mCurrentSuite != null) {
-                mSerializer.endTag("", TAG_SUITE);
+                if (mMultiFile) {
+                    close();
+                } else {
+                    mSerializer.endTag("", TAG_SUITE);
+                }
             }
+
+            openIfRequired(suiteName);
 
             mSerializer.startTag("", TAG_SUITE);
             mSerializer.attribute("", ATTRIBUTE_NAME, suiteName);
@@ -138,13 +145,20 @@ public class JUnitReportListener implements TestListener {
         }
     }
 
-    private void openIfRequired(Test test) throws IOException {
-        if (mOutputStream == null) {
-            mOutputStream = mContext.openFileOutput(mReportFilePath, 0);
+    private void openIfRequired(String suiteName) throws IOException {
+        if (mSerializer == null) {
+            String fileName = mReportFilePath;
+            if (mMultiFile) {
+                fileName = fileName.replace("$(suite)", suiteName);
+            }
+
+            mOutputStream = mContext.openFileOutput(fileName, 0);
             mSerializer = Xml.newSerializer();
             mSerializer.setOutput(mOutputStream, ENCODING_UTF_8);
             mSerializer.startDocument(ENCODING_UTF_8, true);
-            mSerializer.startTag("", TAG_SUITES);
+            if (!mMultiFile) {
+                mSerializer.startTag("", TAG_SUITES);
+            }
         }
     }
 
@@ -205,7 +219,9 @@ public class JUnitReportListener implements TestListener {
                     mSerializer.endTag("", TAG_SUITE);
                 }
 
-                mSerializer.endTag("", TAG_SUITES);
+                if (!mMultiFile) {
+                    mSerializer.endTag("", TAG_SUITES);
+                }
                 mSerializer.endDocument();
                 mSerializer = null;
             } catch (IOException e) {

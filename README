@@ -26,7 +26,9 @@ produced at:
 /data/data/<tested application package>/files/junit-report.xml
 
 The file may be retrieved from the device using adb pull (see below
-for more details).
+for more details).  You may also choose to produce multiple output
+files, one per suite, by setting the multiFile option to true.
+Again, details may be found below.
 
 Using the Runner
 ----------------
@@ -107,8 +109,9 @@ Report Format
 As stated above, the XML report format is based on the Ant JUnit
 task's XML formatter.  A few caveats apply:
 
-  * Multiple suites are all placed in a single file under a root
-    <testsuites> element.
+  * In the default single file mode, multiple suites are all placed in
+    a single file under a root <testsuites> element.  In multi-file
+    mode each XML file contains a single suite.
   * Redundant information about the number of nested cases within a
     suite is omitted.
   * Durations are omitted from suites.
@@ -128,11 +131,19 @@ me know (see below) and I will see what can be done.
 Customising Via Arguments
 -------------------------
 
-The runner supports two arguments:
+The runner supports the following arguments:
 
-  * reportFilePath: the path, relative to the root of the tested
-    application's file storage area, of the report file to generate.
-    Defaults to junit-report.xml.
+  * multiFile: if set to true, a new report file is generated for each
+    test suite.  If false, a single report is generated containing all
+    suites.  Defaults to false.
+  * reportFilePath: the name of the report file to generate (single
+    file mode) or a pattern for the name of the files to generate
+    (multiple file mode).  In the latter case the string $(suite)
+    will be substituted with the test suite name to produce the file
+    name for each suite.  All reports will appear in the tested
+    application's file storage area.  Defaults to junit-report.xml in
+    single file mode, junit-report-$(suite).xml in multiple file
+    mode.
   * filterTraces: if true, stack traces in the report will be filtered
     to remove common noise (e.g. framework methods).  Defaults to
     true.
@@ -142,6 +153,53 @@ example:
 
 adb shell am instrument -w -e reportFilePath my-report.xml \
   com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
+
+If you need to pass arguments in your Ant build, you must override
+the built-in run-tests target.  As an example, if you prefer multiple
+output files (which are more compatible with some tools), you need to
+set the multiFile argument to true.  In this case you will also need
+to pull the whole directory of files from the device after running
+your tests:
+
+    <target name="run-tests" depends="-install-tested-project, install"
+            description="Runs tests from the package defined in test.package property">
+        <property name="reports.dir" value="${out.dir}/reports"/>
+        <property name="files.dir" value="/data/data/${tested.manifest.package}/files"/>
+
+        <echo>Cleaning up previous test reports...</echo>
+        <delete dir="${reports.dir}"/>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}" />
+            <arg value="shell" />
+            <arg value="rm" />
+            <arg value="${files.dir}/*" />
+        </exec>
+
+        <echo>Running tests...</echo>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}"/>
+            <arg value="shell" />
+            <arg value="am" />
+            <arg value="instrument" />
+            <arg value="-w" />
+            <arg value="-e" />
+            <arg value="coverage" />
+            <arg value="@{emma.enabled}" />
+            <arg value="-e" />
+            <arg value="multiFile" />
+            <arg value="true" />
+            <arg value="${manifest.package}/${test.runner}" />
+        </exec>
+        
+        <echo>Downloading XML test reports...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}"/>
+            <arg value="pull" />
+            <arg value="${files.dir}" />
+            <arg value="${reports.dir}" />
+        </exec>
+    </target>
 
 Building From Source
 --------------------

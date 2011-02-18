@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2010 Zutubi Pty Ltd 
+ * Copyright (C) 2010-2011 Zutubi Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
+ * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software 
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -41,7 +41,7 @@ import android.test.InstrumentationTestRunner;
  * filtered to remove noise such as framework methods (default: true)</li>
  * </ul>
  * These arguments may be specified as follows:
- * 
+ *
  * <pre>
  * {@code adb shell am instrument -w -e reportFile my-report-file.xml}
  * </pre>
@@ -57,32 +57,53 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
      */
     private static final String ARG_FILTER_TRACES = "filterTraces";
     /**
-     * Default path of the report file.
+     * If true, produce a separate file for each test suite.  By default a single report is created
+     * for all suites.
      */
-    private static final String DEFAULT_REPORT_FILE = "junit-report.xml";
+    private static final String ARG_MULTI_FILE = "multiFile";
+    /**
+     * Default name of the single report file.
+     */
+    private static final String DEFAULT_SINGLE_REPORT_FILE = "junit-report.xml";
+    /**
+     * Default name pattern for multiple report files.
+     */
+    private static final String DEFAULT_MULTI_REPORT_FILE = "junit-report-$(suite).xml";
 
     private JUnitReportListener mListener;
     private String mReportFilePath;
     private boolean mFilterTraces = true;
+    private boolean mMultiFile = false;
 
     @Override
     public void onCreate(Bundle arguments) {
         if (arguments != null) {
             mReportFilePath = arguments.getString(ARG_REPORT_FILE_PATH);
-            mFilterTraces = arguments.getBoolean(ARG_FILTER_TRACES, true);
+            mFilterTraces = getBooleanArgument(arguments, ARG_FILTER_TRACES, true);
+            mMultiFile = getBooleanArgument(arguments, ARG_MULTI_FILE, false);
         }
 
         if (mReportFilePath == null) {
-            mReportFilePath = DEFAULT_REPORT_FILE;
+            mReportFilePath = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
         }
 
         super.onCreate(arguments);
     }
 
+    private boolean getBooleanArgument(Bundle arguments, String name, boolean defaultValue)
+    {
+        String value = arguments.getString(name);
+        if (value == null) {
+            return defaultValue;
+        } else {
+            return Boolean.parseBoolean(value);
+        }
+    }
+
     @Override
     protected AndroidTestRunner getAndroidTestRunner() {
         AndroidTestRunner runner = new AndroidTestRunner();
-        mListener = new JUnitReportListener(getTargetContext(), mReportFilePath, mFilterTraces);
+        mListener = new JUnitReportListener(getTargetContext(), mReportFilePath, mFilterTraces, mMultiFile);
         runner.addTestListener(mListener);
         return runner;
     }
