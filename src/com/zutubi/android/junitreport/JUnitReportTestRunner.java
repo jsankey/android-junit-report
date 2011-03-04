@@ -28,17 +28,34 @@ import android.test.InstrumentationTestRunner;
  * property.
  * <p/>
  * This runner behaves identically to the default, with the added side-effect of
- * producing a JUnit XML report. The report format is similar to that produced
+ * producing JUnit XML reports. The report format is similar to that produced
  * by the Ant JUnit task's XML formatter, making it compatible with existing
  * tools that can process that format. See {@link JUnitReportListener} for
  * further details.
  * <p/>
  * This runner accepts the following arguments:
  * <ul>
- * <li>reportFilePath: path of the file to write the XML report to, in the
- * target application's data area (default: junit-report.xml).</li>
- * <li>filterTraces: if true, stack traces in test failure reports will be
- * filtered to remove noise such as framework methods (default: true)</li>
+ *   <li>
+ *     reportFile: name of the file(s) to write the XML report to (default:
+ *     junit-report.xml or junit-report-$(suite).xml depending on the value of
+ *     multiFile).  May contain $(suite), which will be replaced with the test
+ *     suite name when using multiFile mode.  See the reportDir argument for
+ *     discussion of the file location.
+ *   </li>
+ *   <li>
+ *     reportDir: if specified, absolute path to a directory in which to write
+ *     the report file(s) (default: unset, in which case files are written to
+ *     the test application's data area if possible, or the application under
+ *     test's data area if that fails).
+ *   </li>
+ *   <li>
+ *     multiFile: if true, write a separate XML file for each test suite;
+ *     otherwise include all suites in a single XML file (default: false).
+ *   </li>
+ *   <li>
+ *     filterTraces: if true, stack traces in test failure reports will be
+ *     filtered to remove noise such as framework methods (default: true)
+ *   </li>
  * </ul>
  * These arguments may be specified as follows:
  *
@@ -48,9 +65,14 @@ import android.test.InstrumentationTestRunner;
  */
 public class JUnitReportTestRunner extends InstrumentationTestRunner {
     /**
-     * Path, relative to the target applications file root, at which to write the report file.
+     * Name of the report file(s) to write, may contain $(suite) in multiFile mode.
      */
-    private static final String ARG_REPORT_FILE_PATH = "reportFilePath";
+    private static final String ARG_REPORT_FILE = "reportFile";
+    /**
+     * If specified, path of the directory to write report files to.  If not set the files are
+     * written to the test application's data area.
+     */
+    private static final String ARG_REPORT_DIR = "reportDir";
     /**
      * If true, stack traces in the report will be filtered to remove common noise (e.g. framework
      * methods).
@@ -71,20 +93,22 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     private static final String DEFAULT_MULTI_REPORT_FILE = "junit-report-$(suite).xml";
 
     private JUnitReportListener mListener;
-    private String mReportFilePath;
+    private String mReportFile;
+    private String mReportDir;
     private boolean mFilterTraces = true;
     private boolean mMultiFile = false;
 
     @Override
     public void onCreate(Bundle arguments) {
         if (arguments != null) {
-            mReportFilePath = arguments.getString(ARG_REPORT_FILE_PATH);
+            mReportFile = arguments.getString(ARG_REPORT_FILE);
+            mReportDir = arguments.getString(ARG_REPORT_DIR);
             mFilterTraces = getBooleanArgument(arguments, ARG_FILTER_TRACES, true);
             mMultiFile = getBooleanArgument(arguments, ARG_MULTI_FILE, false);
         }
 
-        if (mReportFilePath == null) {
-            mReportFilePath = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
+        if (mReportFile == null) {
+            mReportFile = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
         }
 
         super.onCreate(arguments);
@@ -103,7 +127,7 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     @Override
     protected AndroidTestRunner getAndroidTestRunner() {
         AndroidTestRunner runner = new AndroidTestRunner();
-        mListener = new JUnitReportListener(getTargetContext(), mReportFilePath, mFilterTraces, mMultiFile);
+        mListener = new JUnitReportListener(getContext(), getTargetContext(), mReportFile, mReportDir, mFilterTraces, mMultiFile);
         runner.addTestListener(mListener);
         return runner;
     }

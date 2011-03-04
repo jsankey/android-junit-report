@@ -23,12 +23,17 @@ reports, this runner outputs its XML report in the file storage area
 for the application under test.  By default, the report file is
 produced at:
 
-/data/data/<tested application package>/files/junit-report.xml
+/data/data/<test application package>/files/junit-report.xml
+
+Note, however, that sometimes the android system fails to create the
+files directory, in which case the runner will fall back to:
+
+/data/data/<application under test package>/files/junit-report.xml
 
 The file may be retrieved from the device using adb pull (see below
-for more details).  You may also choose to produce multiple output
-files, one per suite, by setting the multiFile option to true.
-Again, details may be found below.
+for more details).  You may also customise the output location,
+file name and even choose to produce multiple output files (one per
+suite).  Again, details may be found below.
 
 Using the Runner
 ----------------
@@ -74,11 +79,11 @@ device, you can use Ant to run an adb pull, for example:
 
     <target name="fetch-test-report">
         <echo>Downloading XML test report...</echo>
-	<mkdir dir="${reports.dir}"/>
+        <mkdir dir="${reports.dir}"/>
         <exec executable="${adb}" failonerror="true">
 	    <arg line="${adb.device.arg}"/>
             <arg value="pull" />
-            <arg value="/data/data/${tested.manifest.package}/files/junit-report.xml" />
+            <arg value="/data/data/${manifest.package}/files/junit-report.xml" />
             <arg value="${reports.dir}/junit-report.xml" />
         </exec>
     </target>
@@ -110,7 +115,7 @@ As stated above, the XML report format is based on the Ant JUnit
 task's XML formatter.  A few caveats apply:
 
   * In the default single file mode, multiple suites are all placed in
-    a single file under a root <testsuites> element.  In multi-file
+    a single file under a root <testsuites> element.  In multiple file
     mode each XML file contains a single suite.
   * Redundant information about the number of nested cases within a
     suite is omitted.
@@ -136,14 +141,21 @@ The runner supports the following arguments:
   * multiFile: if set to true, a new report file is generated for each
     test suite.  If false, a single report is generated containing all
     suites.  Defaults to false.
-  * reportFilePath: the name of the report file to generate (single
+  * reportFile: the name of the report file to generate (single
     file mode) or a pattern for the name of the files to generate
     (multiple file mode).  In the latter case the string $(suite)
     will be substituted with the test suite name to produce the file
-    name for each suite.  All reports will appear in the tested
-    application's file storage area.  Defaults to junit-report.xml in
+    name for each suite.  See the reportDir argument for the
+    destination of the report files.  Defaults to junit-report.xml in
     single file mode, junit-report-$(suite).xml in multiple file
     mode.
+  * reportDir: if specified, the absolute path to a directory in which
+    to write the report file(s).  The specified directory must exist
+    and be accessible to the test application.  If not specified files
+    are written to the test application's data area if possible, or the
+    application under test's data area if that fails (which can happen
+    for unknown reasons in some environments).  Defaults to
+    unspecified.
   * filterTraces: if true, stack traces in the report will be filtered
     to remove common noise (e.g. framework methods).  Defaults to
     true.
@@ -151,7 +163,7 @@ The runner supports the following arguments:
 To specify arguments, use the -e flag to adb shell am instrument, for
 example:
 
-adb shell am instrument -w -e reportFilePath my-report.xml \
+adb shell am instrument -w -e reportFile my-report.xml \
   com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
 
 If you need to pass arguments in your Ant build, you must override
@@ -164,7 +176,7 @@ your tests:
     <target name="run-tests" depends="-install-tested-project, install"
             description="Runs tests from the package defined in test.package property">
         <property name="reports.dir" value="${out.dir}/reports"/>
-        <property name="files.dir" value="/data/data/${tested.manifest.package}/files"/>
+        <property name="files.dir" value="/data/data/${manifest.package}/files"/>
 
         <echo>Cleaning up previous test reports...</echo>
         <delete dir="${reports.dir}"/>

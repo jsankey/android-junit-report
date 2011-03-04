@@ -27,6 +27,7 @@ import junit.framework.TestListener;
 
 import org.xmlpull.v1.XmlSerializer;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,15 +35,26 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 /**
- * Custom test listener that outputs test results to a single XML file. The file
- * uses a similar format to the Ant JUnit task XML formatter, with a few of
+ * Custom test listener that outputs test results to XML files. The files
+ * use a similar format to the Ant JUnit task XML formatter, with a few of
  * caveats:
  * <ul>
- * <li>Multiple suites are all placed in a single file under a root
- * &lt;testsuites&gt; element.</li>
- * <li>Redundant information about the number of nested cases within a suite is
- * omitted.</li>
- * <li>Neither standard output nor system properties are included.</li>
+ *   <li>
+ *     By default, multiple suites are all placed in a single file under a root
+ *     &lt;testsuites&gt; element.  In multiFile mode a separate file is
+ *     created for each suite, which may be more compatible with existing
+ *     tools.
+ *   </li>
+ *   <li>
+ *     Redundant information about the number of nested cases within a suite is
+ *     omitted.
+ *   </li>
+ *   <li>
+ *     Durations are omitted from suites.
+ *   </li>
+ *   <li>
+ *     Neither standard output nor system properties are included.
+ *   </li>
  * </ul>
  * The differences mainly revolve around making this reporting as lightweight as
  * possible. The report is streamed as the tests run, making it impossible to,
@@ -80,7 +92,9 @@ public class JUnitReportListener implements TestListener {
     };
 
     private Context mContext;
-    private String mReportFilePath;
+    private Context mTargetContext;
+    private String mReportFile;
+    private String mReportDir;
     private boolean mFilterTraces;
     private boolean mMultiFile;
     private FileOutputStream mOutputStream;
@@ -94,16 +108,21 @@ public class JUnitReportListener implements TestListener {
     /**
      * Creates a new listener.
      *
-     * @param context context of the target application under test
-     * @param reportFilePath path of the report file to create (under the
-     *            context using {@link Context#openFileOutput(String, int)}).
+     * @param context context of the test application
+     * @param targetContext context of the application under test
+     * @param reportFile name of the report file(s) to create
+     * @param reportDir  path of the directory under which to write files
+     *                  (may be null in which case files are written under
+     *                  the context using {@link Context#openFileOutput(String, int)}).
      * @param filterTraces if true, stack traces will have common noise (e.g.
      *            framework methods) omitted for clarity
      * @param multiFile if true, use a separate file for each test suite
      */
-    public JUnitReportListener(Context context, String reportFilePath, boolean filterTraces, boolean multiFile) {
+    public JUnitReportListener(Context context, Context targetContext, String reportFile, String reportDir, boolean filterTraces, boolean multiFile) {
         this.mContext = context;
-        this.mReportFilePath = reportFilePath;
+        this.mTargetContext = targetContext;
+        this.mReportFile = reportFile;
+        this.mReportDir = reportDir;
         this.mFilterTraces = filterTraces;
         this.mMultiFile = multiFile;
     }
@@ -147,12 +166,21 @@ public class JUnitReportListener implements TestListener {
 
     private void openIfRequired(String suiteName) throws IOException {
         if (mSerializer == null) {
-            String fileName = mReportFilePath;
+            String fileName = mReportFile;
             if (mMultiFile) {
                 fileName = fileName.replace("$(suite)", suiteName);
             }
 
-            mOutputStream = mContext.openFileOutput(fileName, 0);
+            if (mReportDir == null) {
+                if (mContext.getFilesDir() != null) {
+                    mOutputStream = mContext.openFileOutput(fileName, 0);
+                } else {
+                    mOutputStream = mTargetContext.openFileOutput(fileName, 0);
+                }
+            } else {
+                mOutputStream = new FileOutputStream(new File(mReportDir, fileName));
+            }
+
             mSerializer = Xml.newSerializer();
             mSerializer.setOutput(mOutputStream, ENCODING_UTF_8);
             mSerializer.startDocument(ENCODING_UTF_8, true);
