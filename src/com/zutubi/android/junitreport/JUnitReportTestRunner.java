@@ -16,9 +16,14 @@
 
 package com.zutubi.android.junitreport;
 
+import android.app.KeyguardManager;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.test.AndroidTestRunner;
 import android.test.InstrumentationTestRunner;
+import android.util.Log;
 
 /**
  * Custom test runner that adds a {@link JUnitReportListener} to the underlying
@@ -64,6 +69,8 @@ import android.test.InstrumentationTestRunner;
  * </pre>
  */
 public class JUnitReportTestRunner extends InstrumentationTestRunner {
+    private static final String TAG = "JUnitReportTestRunner";
+
     /**
      * Name of the report file(s) to write, may contain $(suite) in multiFile mode.
      */
@@ -97,6 +104,8 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     private String mReportDir;
     private boolean mFilterTraces = true;
     private boolean mMultiFile = false;
+    private KeyguardManager.KeyguardLock mKeyguardLock;
+    private PowerManager.WakeLock mWakeLock;
 
     @Override
     public void onCreate(Bundle arguments) {
@@ -111,7 +120,36 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
             mReportFile = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
         }
 
+        // Try disabling keyguard if current test permission to do so
+        if (getContext().checkCallingOrSelfPermission(android.Manifest.permission.DISABLE_KEYGUARD) == PackageManager.PERMISSION_GRANTED) {
+            Log.i(TAG, "Disabling keyguard");
+            KeyguardManager keyguardManager = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
+            mKeyguardLock = keyguardManager.newKeyguardLock("JUnitReportTestRunner");
+            mKeyguardLock.disableKeyguard();
+        } else {
+            Log.i(TAG, "Test lacks permission to disable keyguard. UI based tests may fail if keyguard is up.");
+        }
+
+        if (getContext().checkCallingOrSelfPermission(android.Manifest.permission.WAKE_LOCK) == PackageManager.PERMISSION_GRANTED) {
+            Log.i(TAG, "Acquiring wake lock");
+            PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.FULL_WAKE_LOCK, "JUnitReportTestRunner");
+            mWakeLock.acquire();
+        } else {
+            Log.i(TAG, "Test lacks permission to acquire wake lock.");
+        }
+
         super.onCreate(arguments);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mKeyguardLock != null) {
+            mKeyguardLock.reenableKeyguard();
+        }
+        if (mWakeLock != null) {
+            mWakeLock.release();
+        }
     }
 
     private boolean getBooleanArgument(Bundle arguments, String name, boolean defaultValue)
@@ -123,11 +161,11 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
             return Boolean.parseBoolean(value);
         }
     }
-
-	/** you can subclass and override this if you want to use a different TestRunner */
-	protected AndroidTestRunner makeAndroidTestRunner() {
-		return new AndroidTestRunner();
-	}
+    
+    /** you can subclass and override this if you want to use a different TestRunner */ 
+    protected AndroidTestRunner makeAndroidTestRunner() {
+        return new AndroidTestRunner();
+    }
 	
     @Override
     protected AndroidTestRunner getAndroidTestRunner() {
