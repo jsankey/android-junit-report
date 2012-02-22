@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Locale;
 
 /**
  * Custom test listener that outputs test results to XML files. The files
@@ -219,8 +220,8 @@ public class JUnitReportListener implements TestListener {
     private void recordTestTime() throws IOException {
         if (!mTimeAlreadyWritten) {
             mTimeAlreadyWritten = true;
-            mSerializer.attribute("", ATTRIBUTE_TIME,
-                    String.format("%.3f", (System.currentTimeMillis() - mTestStartTime) / 1000.));
+            mSerializer.attribute("", ATTRIBUTE_TIME, String.format(Locale.ENGLISH, "%.3f",
+                    (System.currentTimeMillis() - mTestStartTime) / 1000.));
         }
     }
 
