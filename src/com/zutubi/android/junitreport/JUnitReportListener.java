@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Zutubi Pty Ltd
+ * Copyright (C) 2010-2012 Zutubi Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import java.util.Locale;
  * e.g. include the case count in a &lt;testsuite&gt; element.
  */
 public class JUnitReportListener implements TestListener {
-    private static final String LOG_TAG = "JUnitReportListener";
+    private static final String LOG_TAG = JUnitReportListener.class.getSimpleName();
 
     private static final String ENCODING_UTF_8 = "utf-8";
 
@@ -120,6 +120,12 @@ public class JUnitReportListener implements TestListener {
      * @param multiFile if true, use a separate file for each test suite
      */
     public JUnitReportListener(Context context, Context targetContext, String reportFile, String reportDir, boolean filterTraces, boolean multiFile) {
+        Log.i(LOG_TAG, "Listener created with arguments:\n" +
+                "  report file  : '" + reportFile + "'\n" +
+                "  report dir   : '" + reportDir + "'\n" +
+                "  filter traces: " + filterTraces + "\n" +
+                "  multi file   : " + multiFile);
+        
         this.mContext = context;
         this.mTargetContext = targetContext;
         this.mReportFile = reportFile;
@@ -174,12 +180,17 @@ public class JUnitReportListener implements TestListener {
 
             if (mReportDir == null) {
                 if (mContext.getFilesDir() != null) {
+                    Log.d(LOG_TAG, "Opening report file '" + fileName + "' in internal storage of test app");
                     mOutputStream = mContext.openFileOutput(fileName, 0);
                 } else {
+                    Log.w(LOG_TAG, "Could not access internal storage of test app, falling back to app under test");
+                    Log.d(LOG_TAG, "Opening report file '" + fileName + "' in internal storage of app under test");
                     mOutputStream = mTargetContext.openFileOutput(fileName, 0);
                 }
             } else {
-                mOutputStream = new FileOutputStream(new File(mReportDir, fileName));
+                File outputFile = new File(mReportDir, fileName);
+                Log.d(LOG_TAG, "Opening report file '" + outputFile.getAbsolutePath() + "'");
+                mOutputStream = new FileOutputStream(outputFile);
             }
 
             mSerializer = Xml.newSerializer();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Zutubi Pty Ltd
+ * Copyright (C) 2010-2012 Zutubi Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.zutubi.android.junitreport;
 import android.os.Bundle;
 import android.test.AndroidTestRunner;
 import android.test.InstrumentationTestRunner;
+import android.util.Log;
 
 /**
  * Custom test runner that adds a {@link JUnitReportListener} to the underlying
@@ -92,6 +93,8 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
      */
     private static final String DEFAULT_MULTI_REPORT_FILE = "junit-report-$(suite).xml";
 
+    private static final String LOG_TAG = JUnitReportTestRunner.class.getSimpleName();
+    
     private JUnitReportListener mListener;
     private String mReportFile;
     private String mReportDir;
@@ -101,14 +104,18 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     @Override
     public void onCreate(Bundle arguments) {
         if (arguments != null) {
+            Log.i(LOG_TAG, "Created with arguments: " + arguments.keySet());
             mReportFile = arguments.getString(ARG_REPORT_FILE);
             mReportDir = arguments.getString(ARG_REPORT_DIR);
             mFilterTraces = getBooleanArgument(arguments, ARG_FILTER_TRACES, true);
             mMultiFile = getBooleanArgument(arguments, ARG_MULTI_FILE, false);
+        } else {
+            Log.i(LOG_TAG, "No arguments provided");
         }
 
         if (mReportFile == null) {
             mReportFile = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
+            Log.i(LOG_TAG, "Defaulted report file too '" + mReportFile + "'");
         }
 
         super.onCreate(arguments);
@@ -124,11 +131,15 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
         }
     }
 
-	/** you can subclass and override this if you want to use a different TestRunner */
-	protected AndroidTestRunner makeAndroidTestRunner() {
-		return new AndroidTestRunner();
-	}
-	
+    /**
+     * Subclass and override this if you want to use a different TestRunner type.
+     * 
+     * @return the test runner to use
+     */
+    protected AndroidTestRunner makeAndroidTestRunner() {
+        return new AndroidTestRunner();
+    }
+
     @Override
     protected AndroidTestRunner getAndroidTestRunner() {
         AndroidTestRunner runner = makeAndroidTestRunner();
