@@ -14,6 +14,11 @@
         <delete dir="${out.dir}"/>
     </target>
     
+    <target name="eclipse">
+        <copy file=".classpath.template" tofile=".classpath"/>
+        <replace file=".classpath" token="@android.jar@" value="${android.jar}"/>
+    </target>
+
     <target name="-init">
         <mkdir dir="${out.dir}"/>
         <mkdir dir="${classes.dir}"/>
