@@ -115,7 +115,7 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
 
         if (mReportFile == null) {
             mReportFile = mMultiFile ? DEFAULT_MULTI_REPORT_FILE : DEFAULT_SINGLE_REPORT_FILE;
-            Log.i(LOG_TAG, "Defaulted report file too '" + mReportFile + "'");
+            Log.i(LOG_TAG, "Defaulted report file to '" + mReportFile + "'");
         }
 
         super.onCreate(arguments);
