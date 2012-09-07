@@ -1,0 +1,53 @@
+Android JUnit Report Example Project
+====================================
+
+Introduction
+------------
+
+This directory contains a sample project that illustrates how to use
+Android JUnit Report with Ant.  The project itself is a default one
+create by the android tool, with a simple test project under the tests/
+subdirectory.
+
+Files Of Interest
+-----------------
+
+The only source files of interest are:
+
+  * tests/ant.properties: sets the test.runner property to use the
+    custom runner.
+  * tests/custom_rules.xml: defines targets that use the custom test
+    runner.
+
+Once you run some tests you will see reports in:
+
+  * tests/bin/reports
+
+Running
+-------
+
+To try out the sample, first build the main application, then run the
+test-and-fetch target in the tests/subdirectory:
+
+  $ ant debug install
+  $ cd tests
+  $ ant test-and-fetch
+
+You should see the report at tests/bin/reports/junit-report.xml.  You
+can also try a target with custom arguments:
+
+  $ ant custom-location
+
+which fetches a report to the same directory, but with the test suite
+name included.  This latter example requires the device to have external
+storage mounted.
+
+More Information
+----------------
+
+For more information, refer to:
+
+  * The top-level README (in the directory above this one).
+  * The official project home page:
+      http://zutubi.com/source/projects/android-junit-report/
+

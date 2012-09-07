@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ajrexamplecustom">
+    <property name="reports.dir" value="bin/reports"/>
+
+    <target name="copy-lib">
+        <copy file="../../build/android-junit-report-dev.jar" todir="libs"/>
+    </target>
+
+    <target name="init-props">
+        <xpath input="${tested.project.dir}/AndroidManifest.xml"
+               expression="/manifest/@package" output="tested.project.app.package"/>
+    </target>
+
+    <!-- The following target shows how to fetch the default report using adb pull. -->
+    <target name="fetch-test-report" depends="init-props">
+        <echo>Downloading XML test report...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}"/>
+            <arg value="pull"/>
+            <arg value="/data/data/${tested.project.app.package}/files/junit-report.xml"/>
+            <arg value="${reports.dir}/junit-report.xml" />
+        </exec>
+    </target>
+
+    <!-- An example of a build, run and report fetch with defaults. -->
+    <target name="test-and-fetch" depends="copy-lib,debug,install,test,fetch-test-report"/>
+
+    <!-- If you want to customise the test run with parameters, do something like this. -->
+    <target name="custom-test-and-fetch" depends="init-props">
+        <echo>Running tests...</echo>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}"/>
+            <arg value="shell"/>
+            <arg value="am"/>
+            <arg value="instrument"/>
+            <arg value="-w"/>
+            <arg value="-e"/>
+            <arg value="reportDir"/>
+            <arg value="__external__/my-reports"/>
+            <arg value="-e"/>
+            <arg value="multiFile"/>
+            <arg value="true"/>
+            <arg value="${project.app.package}/${test.runner}"/>
+        </exec>
+
+        <echo>Downloading XML test report...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <exec executable="${adb}" failonerror="true">
+            <arg line="${adb.device.arg}"/>
+            <arg value="pull"/>
+            <arg value="/mnt/sdcard/Android/data/${tested.project.app.package}/files/my-reports/junit-report-com.zutubi.android.junitreport.example.AJRExampleActivityTest.xml"/>
+            <arg value="${reports.dir}" />
+        </exec>
+    </target>
+
+    <!-- An example build, run and report fetch with custom report location and multiFile turned on. -->
+    <target name="custom-location" depends="copy-lib,debug,install,custom-test-and-fetch"/>
+</project>
