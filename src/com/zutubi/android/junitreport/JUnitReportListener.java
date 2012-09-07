@@ -162,6 +162,7 @@ public class JUnitReportListener implements TestListener {
                     close();
                 } else {
                     mSerializer.endTag("", TAG_SUITE);
+                    mSerializer.flush();
                 }
             }
 
@@ -256,6 +257,7 @@ public class JUnitReportListener implements TestListener {
             error.printStackTrace(mFilterTraces ? new FilteringWriter(w) : new PrintWriter(w));
             mSerializer.text(w.toString());
             mSerializer.endTag("", tag);
+            mSerializer.flush();
         } catch (IOException e) {
             Log.e(LOG_TAG, safeMessage(e));
         }
@@ -275,6 +277,7 @@ public class JUnitReportListener implements TestListener {
             if (test instanceof TestCase) {
                 recordTestTime();
                 mSerializer.endTag("", TAG_CASE);
+                mSerializer.flush();
             }
         } catch (IOException e) {
             Log.e(LOG_TAG, safeMessage(e));
@@ -296,6 +299,7 @@ public class JUnitReportListener implements TestListener {
                     mSerializer.endTag("", TAG_SUITES);
                 }
                 mSerializer.endDocument();
+                mSerializer.flush();
                 mSerializer = null;
             } catch (IOException e) {
                 Log.e(LOG_TAG, safeMessage(e));
