@@ -50,21 +50,22 @@ Customising Via Arguments
 
 The runner supports the following arguments:
 
-  * multiFile: if set to true, a new report file is generated for each
-    test suite.  Defaults to false (a single file contains all suites).
-  * reportFile: the name of the report file to generate (single file
-    mode) or a pattern for the name of the files to generate (multiple
-    file mode).  In the latter case the string __suite__ will be
-    substituted with the test suite name.  Defaults to junit-report.xml
-    in single file mode, junit-report-$(suite).xml in multiple file
-    mode.
-  * reportDir: path to a directory in which to write the report
-    file(s).  May start with __external__ which will be replaced with
-    the external storage directory for the application under test.
-    Defaults to unspecified, in which case the internal storage
-    directory of the application under test is used.
-  * filterTraces: if true, stack traces in the report will be filtered
-    to remove common noise (e.g. framework methods).  Defaults to true.
+  * reportFile: name of the file(s) to write the XML report to (default:
+    junit-report.xml or junit-report-__suite__.xml depending on the value of
+    multiFile).  May contain __suite__, which will be replaced with the test
+    suite name when using multiFile mode.  See the reportDir argument for
+    discussion of the file location.
+  * reportDir: if specified, absolute path to a directory in which to write
+    the report file(s).  May begin with __external__, which will be replaced
+    with the path for the external storage area of the application under
+    test.  This requires external storage to be available and
+    WRITE_EXTERNAL_STORAGE permission in the application under test
+    (default: unset, in which case files are written to the internal storage
+    area of the application under test).
+  * multiFile: if true, write a separate XML file for each test suite;
+    otherwise include all suites in a single XML file (default: false).
+  * filterTraces: if true, stack traces in test failure reports will be
+    filtered to remove noise such as framework methods (default: true)
 
 To specify arguments, use the -e flag to adb shell am instrument, for
 example:
