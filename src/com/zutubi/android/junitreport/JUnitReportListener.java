@@ -16,9 +16,14 @@
 
 package com.zutubi.android.junitreport;
 
-import android.content.Context;
-import android.util.Log;
-import android.util.Xml;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Locale;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -27,13 +32,9 @@ import junit.framework.TestListener;
 
 import org.xmlpull.v1.XmlSerializer;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Locale;
+import android.content.Context;
+import android.util.Log;
+import android.util.Xml;
 
 /**
  * Custom test listener that outputs test results to XML files. The files
@@ -66,6 +67,9 @@ public class JUnitReportListener implements TestListener {
 
     private static final String ENCODING_UTF_8 = "utf-8";
 
+    public static final String TOKEN_SUITE = "__suite__";
+    public static final String TOKEN_EXTERNAL = "__external__";
+
     private static final String TAG_SUITES = "testsuites";
     private static final String TAG_SUITE = "testsuite";
     private static final String TAG_CASE = "testcase";
@@ -92,7 +96,6 @@ public class JUnitReportListener implements TestListener {
             "java.lang.reflect.Method.invokeNative",
     };
 
-    private Context mContext;
     private Context mTargetContext;
     private String mReportFile;
     private String mReportDir;
@@ -125,8 +128,7 @@ public class JUnitReportListener implements TestListener {
                 "  report dir   : '" + reportDir + "'\n" +
                 "  filter traces: " + filterTraces + "\n" +
                 "  multi file   : " + multiFile);
-        
-        this.mContext = context;
+
         this.mTargetContext = targetContext;
         this.mReportFile = reportFile;
         this.mReportDir = reportDir;
@@ -171,34 +173,65 @@ public class JUnitReportListener implements TestListener {
         }
     }
 
-    private void openIfRequired(String suiteName) throws IOException {
-        if (mSerializer == null) {
-            String fileName = mReportFile;
-            if (mMultiFile) {
-                fileName = fileName.replace("$(suite)", suiteName);
-            }
-
-            if (mReportDir == null) {
-                if (mContext.getFilesDir() != null) {
-                    Log.d(LOG_TAG, "Opening report file '" + fileName + "' in internal storage of test app");
-                    mOutputStream = mContext.openFileOutput(fileName, 0);
-                } else {
-                    Log.w(LOG_TAG, "Could not access internal storage of test app, falling back to app under test");
-                    Log.d(LOG_TAG, "Opening report file '" + fileName + "' in internal storage of app under test");
-                    mOutputStream = mTargetContext.openFileOutput(fileName, 0);
+    private void openIfRequired(String suiteName) {
+        try {
+            if (mSerializer == null) {
+                mOutputStream = openOutputStream(resolveFileName(suiteName));
+                mSerializer = Xml.newSerializer();
+                mSerializer.setOutput(mOutputStream, ENCODING_UTF_8);
+                mSerializer.startDocument(ENCODING_UTF_8, true);
+                if (!mMultiFile) {
+                    mSerializer.startTag("", TAG_SUITES);
                 }
-            } else {
-                File outputFile = new File(mReportDir, fileName);
-                Log.d(LOG_TAG, "Opening report file '" + outputFile.getAbsolutePath() + "'");
-                mOutputStream = new FileOutputStream(outputFile);
+            }
+        } catch (IOException e) {
+            Log.e(LOG_TAG, safeMessage(e));
+            throw new RuntimeException("Unable to open serializer: " + e.getMessage(), e);
+        }
+    }
+
+    private String resolveFileName(String suiteName) {
+        String fileName = mReportFile;
+        if (mMultiFile) {
+            fileName = fileName.replace(TOKEN_SUITE, suiteName);
+        }
+        return fileName;
+    }
+
+    private FileOutputStream openOutputStream(String fileName) throws IOException {
+        if (mReportDir == null) {
+            Log.d(LOG_TAG, "No reportDir specified. Opening report file '" + fileName + "' in internal storage of app under test");
+            return mTargetContext.openFileOutput(fileName, Context.MODE_WORLD_READABLE);
+        } else {
+            if (mReportDir.contains(TOKEN_EXTERNAL)) {
+                File externalDir = mTargetContext.getExternalFilesDir(null);
+                if (externalDir == null) {
+                    Log.e(LOG_TAG, "reportDir references external storage, but external storage is not available (check mounting and permissions)");
+                    throw new IOException("Cannot access external storage");
+                }
+
+                String externalPath = externalDir.getAbsolutePath();
+                if (externalPath.endsWith("/")) {
+                    externalPath = externalPath.substring(0, externalPath.length() - 1);
+                }
+
+                mReportDir = mReportDir.replace(TOKEN_EXTERNAL, externalPath);
             }
 
-            mSerializer = Xml.newSerializer();
-            mSerializer.setOutput(mOutputStream, ENCODING_UTF_8);
-            mSerializer.startDocument(ENCODING_UTF_8, true);
-            if (!mMultiFile) {
-                mSerializer.startTag("", TAG_SUITES);
-            }
+            ensureDirectoryExists(mReportDir);
+
+            File outputFile = new File(mReportDir, fileName);
+            Log.d(LOG_TAG, "Opening report file '" + outputFile.getAbsolutePath() + "'");
+            return new FileOutputStream(outputFile);
+        }
+    }
+
+    private void ensureDirectoryExists(String path) throws IOException {
+        File dir = new File(path);
+        if (!dir.isDirectory() && !dir.mkdirs()) {
+            final String message = "Cannot create directory '" + path + "'";
+            Log.e(LOG_TAG, message);
+            throw new IOException(message);
         }
     }
 

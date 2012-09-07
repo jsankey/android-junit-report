@@ -38,16 +38,19 @@ import android.util.Log;
  * <ul>
  *   <li>
  *     reportFile: name of the file(s) to write the XML report to (default:
- *     junit-report.xml or junit-report-$(suite).xml depending on the value of
- *     multiFile).  May contain $(suite), which will be replaced with the test
+ *     junit-report.xml or junit-report-__suite__.xml depending on the value of
+ *     multiFile).  May contain __suite__, which will be replaced with the test
  *     suite name when using multiFile mode.  See the reportDir argument for
  *     discussion of the file location.
  *   </li>
  *   <li>
  *     reportDir: if specified, absolute path to a directory in which to write
- *     the report file(s) (default: unset, in which case files are written to
- *     the test application's data area if possible, or the application under
- *     test's data area if that fails).
+ *     the report file(s).  May begin with __external__, which will be replaced
+ *     with the path for the external storage area of the application under
+ *     test.  This requires external storage to be available and
+ *     WRITE_EXTERNAL_STORAGE permission in the application under test
+ *     (default: unset, in which case files are written to the internal storage
+ *     area of the application under test).
  *   </li>
  *   <li>
  *     multiFile: if true, write a separate XML file for each test suite;
@@ -91,7 +94,7 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     /**
      * Default name pattern for multiple report files.
      */
-    private static final String DEFAULT_MULTI_REPORT_FILE = "junit-report-$(suite).xml";
+    private static final String DEFAULT_MULTI_REPORT_FILE = "junit-report-" + JUnitReportListener.TOKEN_SUITE + ".xml";
 
     private static final String LOG_TAG = JUnitReportTestRunner.class.getSimpleName();
     
