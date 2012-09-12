@@ -291,6 +291,11 @@ public class JUnitReportListener implements TestListener {
     public void close() {
         if (mSerializer != null) {
             try {
+                // Do this just in case endTest() was not called due to a crash in native code.
+                if (TAG_CASE.equals(mSerializer.getName())) {
+                    mSerializer.endTag("", TAG_CASE);
+                }
+
                 if (mCurrentSuite != null) {
                     mSerializer.endTag("", TAG_SUITE);
                 }
