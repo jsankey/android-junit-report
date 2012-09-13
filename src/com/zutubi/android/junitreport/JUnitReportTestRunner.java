@@ -21,6 +21,11 @@ import android.test.AndroidTestRunner;
 import android.test.InstrumentationTestRunner;
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+
 /**
  * Custom test runner that adds a {@link JUnitReportListener} to the underlying
  * test runner in order to capture test results in an XML report. You may use
@@ -74,8 +79,64 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
     private boolean mFilterTraces = true;
     private boolean mMultiFile = false;
 
+    // Watch the log in the background for messages indicating a crash in native code.
+    private static Thread mLogThread = null;
+
+    private synchronized void startLogThread() {
+        if (mLogThread != null) {
+            return;
+        }
+
+        mLogThread = new Thread() {
+            private static final String LOG_KEYWORD_CRASH = "crash";
+            private static final String LOG_KEYWORD_FATAL_EXCEPTION = "fatal exception";
+
+            @Override
+            public void run() {
+                Thread.currentThread().setName("LogThread");
+
+                BufferedReader buffer = null;
+                try {
+                    // Clear the log in the beginning to not trigger on any past messages.
+                    Process process = Runtime.getRuntime().exec("logcat -c");
+                    process.waitFor();
+
+                    // Only look at messages from specific components.
+                    process = Runtime.getRuntime().exec("logcat -s ActivityManager AndroidRuntime System.err");
+                    InputStreamReader stream = new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
+                    buffer = new BufferedReader(stream);
+
+                    String line;
+                    while ((line = buffer.readLine()) != null) {
+                        String lineLower = line.toLowerCase();
+                        if (mListener != null && (lineLower.contains(LOG_KEYWORD_CRASH) || lineLower.contains(LOG_KEYWORD_FATAL_EXCEPTION))) {
+                            // We do not have the time to set up exception handling in this case
+                            // anymore, so call the throwing version of close() here.
+                            mListener.closeThrows();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (buffer != null) {
+                            buffer.close();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        mLogThread.setDaemon(true);
+        mLogThread.start();
+    }
+
     @Override
     public void onCreate(Bundle arguments) {
+        startLogThread();
+
         if (arguments != null) {
             Log.i(LOG_TAG, "Created with arguments: " + arguments.keySet());
             mReportFile = arguments.getString(ARG_REPORT_FILE);
