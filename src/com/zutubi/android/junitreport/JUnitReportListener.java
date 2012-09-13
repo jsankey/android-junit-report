@@ -263,6 +263,20 @@ public class JUnitReportListener implements TestListener {
         }
     }
 
+    /**
+     * Adds an error tag containing the given message.
+     *
+     * @param message message to be shown inside the error tag
+     */
+    public void addErrorTag(String message) throws IOException {
+        recordTestTime();
+
+        mSerializer.startTag("", TAG_ERROR);
+        mSerializer.text(message);
+        mSerializer.endTag("", TAG_ERROR);
+        mSerializer.flush();
+    }
+
     private void recordTestTime() throws IOException {
         if (!mTimeAlreadyWritten) {
             mTimeAlreadyWritten = true;
