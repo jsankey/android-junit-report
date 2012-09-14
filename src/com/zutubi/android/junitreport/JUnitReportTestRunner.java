@@ -101,12 +101,8 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
                 BufferedReader buffer = null;
                 StringBuilder message = new StringBuilder(8192);
                 try {
-                    // Clear the log in the beginning to not trigger on any past messages.
-                    Process process = Runtime.getRuntime().exec("logcat -c");
-                    process.waitFor();
-
                     // Only look at messages from specific components.
-                    process = Runtime.getRuntime().exec("logcat -s ActivityManager AndroidRuntime System.err");
+                    Process process = Runtime.getRuntime().exec("logcat -s ActivityManager AndroidRuntime System.err");
                     InputStreamReader stream = new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
                     buffer = new BufferedReader(stream);
 
@@ -150,6 +146,14 @@ public class JUnitReportTestRunner extends InstrumentationTestRunner {
                 }
             }
         };
+
+        try {
+            // Clear the log in the beginning to not trigger on any past messages.
+            Process process = Runtime.getRuntime().exec("logcat -c");
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         mLogThread.setDaemon(true);
         mLogThread.start();
