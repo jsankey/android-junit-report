@@ -34,47 +34,17 @@ import android.util.Log;
  * tools that can process that format. See {@link JUnitReportListener} for
  * further details.
  * <p/>
- * This runner accepts the following arguments:
- * <ul>
- *   <li>
- *     reportFile: name of the file(s) to write the XML report to (default:
- *     junit-report.xml or junit-report-__suite__.xml depending on the value of
- *     multiFile).  May contain __suite__, which will be replaced with the test
- *     suite name when using multiFile mode.  See the reportDir argument for
- *     discussion of the file location.
- *   </li>
- *   <li>
- *     reportDir: if specified, absolute path to a directory in which to write
- *     the report file(s).  May begin with __external__, which will be replaced
- *     with the path for the external storage area of the application under
- *     test.  This requires external storage to be available and
- *     WRITE_EXTERNAL_STORAGE permission in the application under test
- *     (default: unset, in which case files are written to the internal storage
- *     area of the application under test).
- *   </li>
- *   <li>
- *     multiFile: if true, write a separate XML file for each test suite;
- *     otherwise include all suites in a single XML file (default: false).
- *   </li>
- *   <li>
- *     filterTraces: if true, stack traces in test failure reports will be
- *     filtered to remove noise such as framework methods (default: true)
- *   </li>
- * </ul>
- * These arguments may be specified as follows:
- *
- * <pre>
- * {@code adb shell am instrument -w -e reportFile my-report-file.xml}
- * </pre>
+ * This runner accepts arguments specified by the ARG_* constants.  For details
+ * refer to the README.
  */
 public class JUnitReportTestRunner extends InstrumentationTestRunner {
     /**
-     * Name of the report file(s) to write, may contain $(suite) in multiFile mode.
+     * Name of the report file(s) to write, may contain __suite__ in multiFile mode.
      */
     private static final String ARG_REPORT_FILE = "reportFile";
     /**
-     * If specified, path of the directory to write report files to.  If not set the files are
-     * written to the test application's data area.
+     * If specified, path of the directory to write report files to.  May start with __external__.
+     * If not set files are written to the internal storage directory of the app under test.
      */
     private static final String ARG_REPORT_DIR = "reportDir";
     /**
