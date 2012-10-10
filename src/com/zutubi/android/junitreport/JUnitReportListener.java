@@ -162,6 +162,7 @@ public class JUnitReportListener implements TestListener {
                     close();
                 } else {
                     mSerializer.endTag("", TAG_SUITE);
+                    mSerializer.flush();
                 }
             }
 
@@ -256,9 +257,24 @@ public class JUnitReportListener implements TestListener {
             error.printStackTrace(mFilterTraces ? new FilteringWriter(w) : new PrintWriter(w));
             mSerializer.text(w.toString());
             mSerializer.endTag("", tag);
+            mSerializer.flush();
         } catch (IOException e) {
             Log.e(LOG_TAG, safeMessage(e));
         }
+    }
+
+    /**
+     * Adds an error tag containing the given message.
+     *
+     * @param message message to be shown inside the error tag
+     */
+    public void addErrorTag(String message) throws IOException {
+        recordTestTime();
+
+        mSerializer.startTag("", TAG_ERROR);
+        mSerializer.text(message);
+        mSerializer.endTag("", TAG_ERROR);
+        mSerializer.flush();
     }
 
     private void recordTestTime() throws IOException {
@@ -275,9 +291,39 @@ public class JUnitReportListener implements TestListener {
             if (test instanceof TestCase) {
                 recordTestTime();
                 mSerializer.endTag("", TAG_CASE);
+                mSerializer.flush();
             }
         } catch (IOException e) {
             Log.e(LOG_TAG, safeMessage(e));
+        }
+    }
+
+    /**
+     * Releases all resources associated with this listener.  Throws an
+     * IOException in case of an error.
+     */
+    public void closeThrows() throws IOException {
+        if (mSerializer != null) {
+            // Do this just in case endTest() was not called due to a crash in native code.
+            if (TAG_CASE.equals(mSerializer.getName())) {
+                mSerializer.endTag("", TAG_CASE);
+            }
+
+            if (mCurrentSuite != null) {
+                mSerializer.endTag("", TAG_SUITE);
+            }
+
+            if (!mMultiFile) {
+                mSerializer.endTag("", TAG_SUITES);
+            }
+            mSerializer.endDocument();
+            mSerializer.flush();
+            mSerializer = null;
+        }
+
+        if (mOutputStream != null) {
+            mOutputStream.close();
+            mOutputStream = null;
         }
     }
 
@@ -286,29 +332,10 @@ public class JUnitReportListener implements TestListener {
      * when the listener is finished with.
      */
     public void close() {
-        if (mSerializer != null) {
-            try {
-                if (mCurrentSuite != null) {
-                    mSerializer.endTag("", TAG_SUITE);
-                }
-
-                if (!mMultiFile) {
-                    mSerializer.endTag("", TAG_SUITES);
-                }
-                mSerializer.endDocument();
-                mSerializer = null;
-            } catch (IOException e) {
-                Log.e(LOG_TAG, safeMessage(e));
-            }
-        }
-
-        if (mOutputStream != null) {
-            try {
-                mOutputStream.close();
-                mOutputStream = null;
-            } catch (IOException e) {
-                Log.e(LOG_TAG, safeMessage(e));
-            }
+        try {
+            closeThrows();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, safeMessage(e));
         }
     }
 
