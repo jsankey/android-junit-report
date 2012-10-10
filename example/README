@@ -40,7 +40,9 @@ can also try a target with custom arguments:
 
 which fetches a report to the same directory, but with the test suite
 name included.  This latter example requires the device to have external
-storage mounted.
+storage mounted.  It also assumes that such storage is mounted at
+/sdcard, which is not always true (you can simply edit the path in the
+custom rules file to match your device if necessary).
 
 More Information
 ----------------

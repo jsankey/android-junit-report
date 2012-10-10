@@ -49,7 +49,7 @@
         <exec executable="${adb}" failonerror="true">
             <arg line="${adb.device.arg}"/>
             <arg value="pull"/>
-            <arg value="/mnt/sdcard/Android/data/${tested.project.app.package}/files/my-reports/junit-report-com.zutubi.android.junitreport.example.AJRExampleActivityTest.xml"/>
+            <arg value="/sdcard/Android/data/${tested.project.app.package}/files/my-reports/junit-report-com.zutubi.android.junitreport.example.AJRExampleActivityTest.xml"/>
             <arg value="${reports.dir}" />
         </exec>
     </target>
