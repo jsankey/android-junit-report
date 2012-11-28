@@ -34,7 +34,7 @@ project which implements the JUnit tests:
       http://github.com/jsankey/android-junit-report/downloads
     and add it to your libs/ directory.
   * Edit AndroidManifest.xml to set android:name in the
-    <instrumentation> tag to:
+    instrumentation tag to:
       com.zutubi.android.junitreport.JUnitReportTestRunner.
   * Edit ant.properties to add the line:
       test.runner=com.zutubi.android.junitreport.JUnitReportTestRunner
@@ -42,7 +42,7 @@ project which implements the JUnit tests:
       $ ant debug install test
   * Pull the resulting XML report from the device (from the application
     under test's internal storage directory):
-      $ adb pull /data/data/<main app package>/files/junit-report.xml
+      $ adb pull /data/data/main app package/files/junit-report.xml
   * Integrate the XML with your chosen build tool.
   
 Customising Via Arguments
