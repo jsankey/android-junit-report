@@ -32,17 +32,17 @@ project which implements the JUnit tests:
 
   * Grab the latest jar from:
       http://github.com/jsankey/android-junit-report/downloads
-    and add it to your libs/ directory.
-  * Edit AndroidManifest.xml to set android:name in the
-    <instrumentation> tag to:
-      com.zutubi.android.junitreport.JUnitReportTestRunner.
+    and add it to your `libs/` directory.
+  * Edit `AndroidManifest.xml` to set `android:name` in the
+    `instrumentation` tag to:
+    ```com.zutubi.android.junitreport.JUnitReportTestRunner```
   * Edit ant.properties to add the line:
-      test.runner=com.zutubi.android.junitreport.JUnitReportTestRunner
+    ```test.runner=com.zutubi.android.junitreport.JUnitReportTestRunner```
   * Run your tests as you would normally:
-      $ ant debug install test
+    ```$ ant debug install test```
   * Pull the resulting XML report from the device (from the application
     under test's internal storage directory):
-      $ adb pull /data/data/<main app package>/files/junit-report.xml
+    ```$ adb pull /data/data/main app package/files/junit-report.xml```
   * Integrate the XML with your chosen build tool.
   
 Customising Via Arguments
@@ -50,29 +50,29 @@ Customising Via Arguments
 
 The runner supports the following arguments:
 
-  * multiFile: if set to true, a new report file is generated for each
+  * `multiFile: if set to true, a new report file is generated for each
     test suite.  Defaults to false (a single file contains all suites).
   * reportFile: the name of the report file to generate (single file
     mode) or a pattern for the name of the files to generate (multiple
-    file mode).  In the latter case the string __suite__ will be
-    substituted with the test suite name.  Defaults to junit-report.xml
-    in single file mode, junit-report-__suite__.xml in multiple file
-    mode.
-  * reportDir: path to a directory in which to write the report
-    file(s).  May start with __external__ which will be replaced with
+    file mode).  In the latter case the string `__suite__` will be
+    substituted with the test suite name.  Defaults to
+    `junit-report.xml` in single file mode,
+    `junit-report-__suite__.xml` in multiple file mode.
+  * `reportDiri`: path to a directory in which to write the report
+    file(s).  May start with `__external__` which will be replaced with
     the external storage directory for the application under test.
     This requires external storage to be available and
-    WRITE_EXTERNAL_STORAGE permission in the application under test.
+    `WRITE_EXTERNAL_STORAGE` permission in the application under test.
     Defaults to unspecified, in which case the internal storage
     directory of the application under test is used.
-  * filterTraces: if true, stack traces in the report will be filtered
+  * `filterTraces`: if true, stack traces in the report will be filtered
     to remove common noise (e.g. framework methods).  Defaults to true.
 
 To specify arguments, use the -e flag to adb shell am instrument, for
 example:
 
-adb shell am instrument -w -e reportFile my-report.xml \
-  com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
+```adb shell am instrument -w -e reportFile my-report.xml \
+  com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner```
 
 See the example and/or full documentation for how to set arguments in
 you Ant build.
@@ -105,15 +105,15 @@ To run a build:
     README.  In this file, define the location of an android.jar to
     build against, for example:
 
-    android.jar=/opt/android/platforms/android-14/android.jar
+    ```android.jar=/opt/android/platforms/android-14/android.jar```
 
     where /opt/android is the root of an Android SDK.
 
   * Run ant in this same directory:
 
-    $ ant
+    ```$ ant```
 
-The jar will be created at build/android-junit-report-dev.jar.
+The jar will be created at `build/android-junit-report-dev.jar`.
 
 Feedback
 -------
