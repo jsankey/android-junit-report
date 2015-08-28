@@ -77,8 +77,8 @@ The runner supports the following arguments:
 To specify arguments, use the -e flag to adb shell am instrument, for
 example:
 
-adb shell am instrument -w -e reportFile my-report.xml \
-  com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
+    adb shell am instrument -w -e reportFile my-report.xml \
+        com.example.test/com.zutubi.android.junitreport.JUnitReportTestRunner
 
 See the example and/or full documentation for how to set arguments in
 you Ant build.
