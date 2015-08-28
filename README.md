@@ -17,6 +17,12 @@ Android JUnit report has home on the web at:
 
 http://zutubi.com/source/projects/android-junit-report/
 
+Note
+----
+
+This project is no longer required with the new, Gradle-based build
+system that ships with modern versions of the ADT.
+
 License
 -------
 
