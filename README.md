@@ -60,12 +60,12 @@ The runner supports the following arguments:
     test suite.  Defaults to false (a single file contains all suites).
   * reportFile: the name of the report file to generate (single file
     mode) or a pattern for the name of the files to generate (multiple
-    file mode).  In the latter case the string __suite__ will be
+    file mode).  In the latter case the string \_\_suite\_\_ will be
     substituted with the test suite name.  Defaults to junit-report.xml
-    in single file mode, junit-report-__suite__.xml in multiple file
+    in single file mode, junit-report-\_\_suite\_\_.xml in multiple file
     mode.
   * reportDir: path to a directory in which to write the report
-    file(s).  May start with __external__ which will be replaced with
+    file(s).  May start with \_\_external\_\_ which will be replaced with
     the external storage directory for the application under test.
     This requires external storage to be available and
     WRITE_EXTERNAL_STORAGE permission in the application under test.
@@ -117,7 +117,7 @@ To run a build:
 
   * Run ant in this same directory:
 
-    $ ant
+     $ ant
 
 The jar will be created at build/android-junit-report-dev.jar.
 
