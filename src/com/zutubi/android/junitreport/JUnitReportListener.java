@@ -201,7 +201,7 @@ public class JUnitReportListener implements TestListener {
     private FileOutputStream openOutputStream(String fileName) throws IOException {
         if (mReportDir == null) {
             Log.d(LOG_TAG, "No reportDir specified. Opening report file '" + fileName + "' in internal storage of app under test");
-            return mTargetContext.openFileOutput(fileName, Context.MODE_WORLD_READABLE);
+            return mTargetContext.openFileOutput(fileName, Context.MODE_PRIVATE);
         } else {
             if (mReportDir.contains(TOKEN_EXTERNAL)) {
                 File externalDir = Compatibility.getExternalFilesDir(mTargetContext, null);
